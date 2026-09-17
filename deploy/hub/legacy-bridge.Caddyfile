@@ -1,0 +1,7 @@
+{
+    auto_https off
+    admin off
+}
+:7861 {
+    reverse_proxy http://firered-audio.:8080
+}

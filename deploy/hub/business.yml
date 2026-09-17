@@ -1,0 +1,12 @@
+services:
+  entry:
+    networks:
+      model: {}
+      caddy:
+        aliases: [firered-audio]
+    labels:
+      caddy: http://firered-audio
+      caddy.reverse_proxy.health_uri: /hub-entry/health
+      caddy.reverse_proxy.health_interval: 10s
+      caddy.reverse_proxy.health_timeout: 3s
+      caddy.reverse_proxy.health_status: '200'

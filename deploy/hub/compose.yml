@@ -1,0 +1,70 @@
+name: firered-hub
+services:
+  runtime:
+    image: ${FIRERED_IMAGE:?fixed managed FireRed image}
+    container_name: firered-hub-runtime
+    restart: 'no'
+    command: [/app/.venv/bin/python, -m, hub_runtime]
+    environment:
+      HUB_SERVICE_ID: firered-audio
+      HUB_RUNTIME_VERSION: ${FIRERED_RUNTIME_VERSION:?}
+      HUB_RUNTIME_ACTOR_ID: ${FIRERED_ACTOR_ID:?}
+      HUB_RUNTIME_TOKEN: ${HUB_FIRERED_RUNTIME_TOKEN:?}
+      HUB_RUNTIME_STATE_DIR: /var/lib/hub-runtime/actors/${FIRERED_ACTOR_ID:?}
+      HUB_NODE_URL: http://host.docker.internal:13912
+      HUB_CONTROL_HOST: '0.0.0.0'
+      HUB_CONTROL_PORT: '18083'
+      HUB_GPU_PROCESS: '1'
+      CUDA_VISIBLE_DEVICES: ''
+      NVIDIA_VISIBLE_DEVICES: '${GPU_0:?},${GPU_1:?},${GPU_2:?}'
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      MODEL_PATH: /models/FireRedAudio
+      MODEL_DEVICE: cuda:0
+      DECODER_DEVICE: cpu
+      VAE_DECODER_PATH: /models/RedAE_decoder/model.pt
+      MODEL_ALIAS: firered-audio-encoder-meanpool-v1
+      EMBEDDING_NORMALIZE: 'true'
+      MAX_AUDIO_BYTES: '33554432'
+      HF_HOME: /hf-cache
+      HF_HUB_OFFLINE: '1'
+      OUTPUT_DIR: /outputs
+      GRADIO_TEMP_DIR: /tmp/gradio
+      GRADIO_ANALYTICS_ENABLED: 'False'
+      TZ: Asia/Shanghai
+    extra_hosts: ['host.docker.internal:host-gateway']
+    ports: ['127.0.0.1:13922:18083']
+    volumes:
+      - /opt/ttd-hub-v2/runtime-state/firered:/var/lib/hub-runtime
+      - /TTD-Data/firered/pretrained_models:/models:ro
+      - /TTD-Data/firered/hf-cache:/hf-cache
+      - /TTD-Data/firered/outputs:/outputs
+      - /TTD-Data/firered/gradio-cache:/tmp/gradio
+    tmpfs: ['/tmp:size=2g,mode=1777']
+    ipc: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['${GPU_0:?}', '${GPU_1:?}', '${GPU_2:?}']
+              capabilities: [gpu]
+    networks: [model]
+    labels:
+      ttd.hub.instance: firered-audio
+      ttd.hub.release: ${FIRERED_RELEASE:?}
+      ttd.hub.dynamic_gpu: 'true'
+  entry:
+    image: ${HUB_IMAGE:?fixed Hub entry image}
+    container_name: firered-hub-entry
+    restart: unless-stopped
+    entrypoint: [/usr/local/bin/model-entry]
+    command: [--upstream, 'http://runtime:8000', --listen, ':8080']
+    networks: [model, caddy]
+    labels:
+      ttd.hub.release: ${FIRERED_RELEASE:?}
+      caddy_ingress_network: caddy
+      caddy: http://firered-pool-validation
+      caddy.reverse_proxy: '{{upstreams 8080}}'
+networks:
+  model: {}
+  caddy: {external: true}

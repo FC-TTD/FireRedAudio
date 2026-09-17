@@ -1,0 +1,14 @@
+name: firered-legacy-bridge
+services:
+  bridge:
+    image: ${CADDY_IMAGE:?fixed Caddy image digest}
+    container_name: firered-legacy-bridge
+    restart: unless-stopped
+    ports: ['17880:7861', '17881:7861']
+    volumes: ['./legacy-bridge.Caddyfile:/etc/caddy/Caddyfile:ro']
+    networks: [caddy]
+    labels:
+      ttd.hub.role: legacy-cpu-bridge
+      ttd.hub.release: ${FIRERED_RELEASE:?}
+networks:
+  caddy: {external: true}
