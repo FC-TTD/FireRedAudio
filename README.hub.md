@@ -32,5 +32,20 @@ CPU HTTP宿主与独立GPU进程分离，真实callback/RPC持有Runtime activit
 正式部署从固定源码快照和镜像digest构建，以 `deploy/hub/compose.yml`、`business.yml`
 及Hub仓库的 `scripts/firered_release.py` 完成维护屏障、actor登记与真实验收。
 
-当前CPU合同测试11项通过，含真实Gradio队列与SDK进程往返；真实受管GPU上线结论随后
-记入Hub `docs/proposals/model-compute-pool/`，不以本地fixture宣称部署完成。
+当前CPU合同测试12项通过，含真实SDK异步归属检查、Gradio队列和进程往返。
+
+## 2026-09-17受管验收与过渡
+
+worker actor `firered-adopt-e8893a4bf5e1`已部署，`http://firered-audio`真实API/UI可用。
+11条完整能力调用、4条较长输入、浏览器识别/克隆/下载及冷态DME客户端均通过；
+受管峰值21334MiB，20个Runtime/Hub活动终态一致。embedding与原preview逐值相同。
+并发提交的权重unload会等待推理；Hub drain确认空进程组和租约释放，旧音频仍可下载。
+首次共享存储加载190.5秒、实际消费者冷重载约78秒，请求后保持热驻留。
+
+完整结果见[Hub接管报告](https://github.com/FC-TTD/ttd-hub/blob/main/docs/proposals/model-compute-pool/firered-online-2026-09-17.md)。
+部署镜像源commit为`e8893a4bf5e1cc723ca6099d330c2ee34fb23ff7`，后续文档不改变制品身份。
+
+**旧入口交接尚未结束。** 现有Mac消费者的冷态兼容补丁在
+[ttd-dme-index PR #2](https://github.com/FC-TTD/ttd-dme-index/pull/2)，需其维护者更新并重启。
+目前edge旧17880/17881和preview GPU仍保留，CPU桥资产已验证但未切换；客户端就绪后
+再关闭旧准入、正常退出旧实例、增量同步文件并切换桥接，不操作个人数据库或进程。
