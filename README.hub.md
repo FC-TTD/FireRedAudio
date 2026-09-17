@@ -26,7 +26,7 @@ CPU HTTP宿主与独立GPU进程分离，真实callback/RPC持有Runtime activit
 数据使用 `/TTD-Data/firered/{pretrained_models,hf-cache,outputs,gradio-cache}`，模型只读。
 迁移先校验文件哈希，原NVMe目录不删除；旧输出和Gradio缓存须保留原路径及文件链接。
 `legacy-bridge.yml`为旧edge17880/17881准备纯CPU兼容转发，目标是受管CPU entry，
-不会重新暴露独立GPU后端。实际切换仍需完成新服务与消费者验收，旧preview此前保持。
+不会重新暴露独立GPU后端。旧端口已切换并通过真实业务验收，旧GPU preview已停止。
 
 旧 `Dockerfile.preview`、`compose.preview.yaml` 与 `README.preview.md` 仅保留来源。
 正式部署从固定源码快照和镜像digest构建，以 `deploy/hub/compose.yml`、`business.yml`
@@ -55,5 +55,11 @@ worker actor `firered-adopt-e8893a4bf5e1`已部署，`http://firered-audio`真�
 停止前归档`/tmp/gradio`和`/outputs`，校验共享存储上的文件；正常停止后再核对持久输出。
 将退役声明合入原部署文件，并设旧容器restart=no，保留停止的容器、原数据和回滚资产。
 启用CPU桥后，验证两旧端口的实际推理、UI上传和旧音频下载，再记录交接完成。
-回滚先停止CPU桥，恢复归档Compose配置及原重启策略，再启动保留的原容器；原GPU必须有
-足够容量。回滚后新增文件留在共享存储，不删除或回滚用户数据。
+回滚先停止CPU桥，恢复归档Compose配置及原重启策略，再启动保留的原容器；将归档的
+`gradio-cache.tar`还原至新tmpfs `/tmp/gradio`并校验后再开放入口。原GPU必须有足够容量。
+回滚后新增文件留在共享存储，不删除或回滚用户数据。
+
+本轮交接已完成：旧实例exit0、释放20934MiB，原容器restart=no、部署声明replicas=0。
+两旧端口8次API回归、旧17880浏览器识别/克隆/4秒WAV下载均通过；迁移前4个文件在三个
+入口共12次下载SHA一致。最终30个Runtime/Hub活动成功、pending0，10个受管服务开放。
+门户链接更新为友好域名，第二GPU调度节点仍未启用。
