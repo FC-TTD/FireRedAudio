@@ -102,6 +102,27 @@ class Contracts(unittest.IsolatedAsyncioTestCase):
             with patch.object(self.runtime,"status",return_value=state):
                 self.assertFalse((await self.client.get("/health")).json()["runtime_ready"])
         self.assertEqual(self.runtime.engine.calls,[])
+    async def test_async_bridge_obeys_real_sdk_owner_check(self):
+        from types import SimpleNamespace
+        class OwnedRuntime(FakeRuntime):
+            _nested=Runtime._nested
+            get=Runtime.get
+            aexecution=Runtime.aexecution
+            def __init__(self):
+                super().__init__()
+                self._guard=threading.RLock();self._started=True;self._active={}
+                self.service='firered-audio';self.version='test'
+                self.health=SimpleNamespace(record_error=lambda *args:None)
+                self._model=SimpleNamespace(invoke=lambda *args:{"ok":True,"value":"owned",
+                    "status":{"base_model_loaded":True,"cuda":{"available":False},"sequence":1}})
+            def _begin(self,grant):
+                self._active['real-scope']={};self.residency='ready'
+                return {'id':'real-scope'}
+            def _finish(self,activity,state):
+                self._active.pop(activity['id']);self.finished+=1
+        runtime=OwnedRuntime();bridge.configure(runtime)
+        self.assertEqual(await bridge.acall('load'),'owned')
+        self.assertEqual(runtime.finished,1)
     async def test_embedding_rest_and_validation(self):
         response=await self.client.post("/embed/audio",files={"audio":("x.wav",b"sample")})
         self.assertEqual(response.status_code,200);self.assertEqual(response.json()["dimension"],4096)

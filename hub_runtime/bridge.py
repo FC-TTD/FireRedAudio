@@ -52,7 +52,12 @@ def call(operation, *args, **kwargs):
 async def acall(operation, *args, **kwargs):
     @_runtime.task
     async def owned():
-        return await asyncio.to_thread(_invoke, operation, args, kwargs)
+        # Resolve the model in the owning asyncio task. A worker thread has a
+        # different SDK owner even though contextvars are copied into it.
+        engine = _runtime.get()
+        engine_id = _runtime.status().get("engine", {}).get("id")
+        envelope = await asyncio.to_thread(engine.invoke, operation, args, kwargs)
+        return _receive(envelope, engine_id)
     return await owned()
 
 def unload():
