@@ -45,7 +45,15 @@ worker actor `firered-adopt-e8893a4bf5e1`已部署，`http://firered-audio`真�
 完整结果见[Hub接管报告](https://github.com/FC-TTD/ttd-hub/blob/main/docs/proposals/model-compute-pool/firered-online-2026-09-17.md)。
 部署镜像源commit为`e8893a4bf5e1cc723ca6099d330c2ee34fb23ff7`，后续文档不改变制品身份。
 
-**旧入口交接尚未结束。** 现有Mac消费者的冷态兼容补丁在
-[ttd-dme-index PR #2](https://github.com/FC-TTD/ttd-dme-index/pull/2)，需其维护者更新并重启。
-目前edge旧17880/17881和preview GPU仍保留，CPU桥资产已验证但未切换；客户端就绪后
-再关闭旧准入、正常退出旧实例、增量同步文件并切换桥接，不操作个人数据库或进程。
+消费者冷态兼容及超时补丁
+[ttd-dme-index PR #2](https://github.com/FC-TTD/ttd-dme-index/pull/2)已合并为`71ce481`。
+历史Mac部署记录不能证明当前消费者位置、版本或使用情况；个人runtime更新不是provider
+迁移的前置条件。未升级的旧消费者仍可能拒绝冷态，CPU桥只保留原地址和HTTP合同。
+
+旧入口切换使用`legacy-bridge.yml`，退役声明使用`legacy-retired.yml`。先保存旧Compose、
+镜像及进程身份，关闭新连接并确认连接/队列排空。**停止容器会丢失tmpfs**，必须在排空后、
+停止前归档`/tmp/gradio`和`/outputs`，校验共享存储上的文件；正常停止后再核对持久输出。
+将退役声明合入原部署文件，并设旧容器restart=no，保留停止的容器、原数据和回滚资产。
+启用CPU桥后，验证两旧端口的实际推理、UI上传和旧音频下载，再记录交接完成。
+回滚先停止CPU桥，恢复归档Compose配置及原重启策略，再启动保留的原容器；原GPU必须有
+足够容量。回滚后新增文件留在共享存储，不删除或回滚用户数据。

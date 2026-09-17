@@ -1,0 +1,10 @@
+# Merge into the former preview Compose assets after draining and stopping it.
+# Keep the exact native image/data for rollback; ordinary Compose up must not
+# resurrect a second GPU provider outside the pool.
+services:
+  app:
+    image: registry.ttd/fireredaudio/native@sha256:f7b8cb2c4505a06a3373439fb2e261e01ff31c0e412a0b7063119d668e17a1a6
+    restart: "no"
+    profiles: [retired]
+    deploy:
+      replicas: 0
