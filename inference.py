@@ -340,7 +340,8 @@ class FireRedAudioInference:
                 "writes a timbre description and edit(semantic) writes "
                 "<|sot|>{new text}<|eot|>, either of which can run to hundreds of tokens."
             )
-        audio = self.vae_decoder.decode(vae_latents.float())
+        decoder_device = next(self.vae_decoder.parameters()).device
+        audio = self.vae_decoder.decode(vae_latents.float().to(decoder_device))
         return AudioOutput(
             audio=audio,
             text=extract_sot_text(text_ids, self.tokenizer, self._sot_id, self._eot_id),

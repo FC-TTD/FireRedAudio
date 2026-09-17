@@ -1,0 +1,29 @@
+FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu22.04
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    UV_LINK_MODE=copy \
+    TORCH_CUDA_ARCH_LIST=8.6 \
+    MAX_JOBS=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      build-essential curl ffmpeg git ninja-build python3.10 python3.10-dev python3-pip \
+    && rm -rf /var/lib/apt/lists/* \
+    && python3.10 -m pip install --upgrade pip uv
+
+WORKDIR /app
+
+COPY pyproject.toml ./
+RUN uv sync --extra accel --group tools \
+    && uv pip install \
+      gradio==5.49.1 \
+      fastapi==0.116.1 \
+      uvicorn==0.35.0 \
+      python-multipart==0.0.20
+
+COPY . /app
+
+EXPOSE 7860
+
+CMD ["/app/.venv/bin/python", "app_preview.py"]

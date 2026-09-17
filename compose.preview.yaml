@@ -1,0 +1,39 @@
+name: fireredaudio-preview
+
+services:
+  app:
+    container_name: fireredaudio-preview
+    image: fireredaudio-preview:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.preview
+    restart: unless-stopped
+    ports:
+      - "17880:7860"
+    environment:
+      MODEL_PATH: /models/FireRedAudio
+      VAE_DECODER_PATH: /models/RedAE_decoder/model.pt
+      MODEL_DEVICE: cuda:0
+      DECODER_DEVICE: cpu
+      OUTPUT_DIR: /outputs
+      HF_HOME: /hf-cache
+      NVIDIA_VISIBLE_DEVICES: "0"
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+    volumes:
+      - /mnt/TTD-Data/fireredaudio/pretrained_models:/models:ro
+      - /mnt/TTD-Data/fireredaudio/hf-cache:/hf-cache
+      - /mnt/TTD-Data/fireredaudio/outputs:/outputs
+    ipc: host
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:7860/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 180s
+      retries: 5
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["0"]
+              capabilities: [gpu]
